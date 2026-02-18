@@ -110,3 +110,5 @@ SELECT
     -
     (SELECT COALESCE(SUM(p.montant),0) FROM paiements p)
   ) AS total_restant;
+
+  -- Fin
