@@ -38,27 +38,55 @@
       <th>Reste</th>
       <th>Date limite</th>
       <th>Retard</th>
+      <th>Statut finance</th>
       <th>Action</th>
     </tr>
   </thead>
   <tbody>
     <?php if (empty($rows)): ?>
-      <tr><td colspan="10" class="muted">Aucune donnée (ou snapshot finance manquant).</td></tr>
+      <tr><td colspan="11" class="muted">Aucune donnée.</td></tr>
     <?php else: ?>
       <?php foreach ($rows as $r): ?>
+        <?php $sansSnapshot = (($r['statut_finance'] ?? '') === 'SANS_SNAPSHOT'); ?>
         <tr>
           <td>#<?= (int)$r['inscription_id'] ?></td>
           <td><?= htmlspecialchars($r['nom'].' '.$r['prenoms']) ?></td>
           <td><?= htmlspecialchars((string)($r['telephone'] ?? '')) ?></td>
           <td><?= htmlspecialchars($r['cohorte']) ?></td>
-          <td><?= htmlspecialchars((string)$r['montant_net']) ?></td>
+
+          <td><?= $sansSnapshot ? '—' : htmlspecialchars((string)$r['montant_net']) ?></td>
           <td><?= htmlspecialchars((string)$r['total_paye']) ?></td>
-          <td><strong><?= htmlspecialchars((string)$r['reste_a_payer']) ?></strong></td>
-          <td><?= htmlspecialchars((string)($r['date_limite_paiement'] ?? '')) ?></td>
-          <td><?= ((int)$r['en_retard']===1) ? 'Oui' : 'Non' ?></td>
-          <td><a href="<?= url('/admin/finance/paiements/voir?id='.(int)$r['inscription_id']) ?>">Voir / Ajouter</a></td>
+
+          <td>
+            <?php if ($sansSnapshot): ?>
+              <span class="badge">SANS_SNAPSHOT</span><br>
+              <a href="<?= url('/admin/finance/cohortes') ?>">Paramétrer tarif</a>
+            <?php else: ?>
+              <strong><?= htmlspecialchars((string)$r['reste_a_payer']) ?></strong>
+            <?php endif; ?>
+          </td>
+
+          <td><?= $sansSnapshot ? '—' : htmlspecialchars((string)($r['date_limite_paiement'] ?? '')) ?></td>
+          <td><?= $sansSnapshot ? '—' : (((int)$r['en_retard']===1) ? 'Oui' : 'Non') ?></td>
+
+          <td>
+            <span class="badge"><?= htmlspecialchars((string)($r['statut_finance'] ?? '')) ?></span>
+          </td>
+
+          <td>
+            <?php if ($sansSnapshot): ?>
+              <a href="<?= url('/admin/finance/cohortes') ?>">Paramétrer + Générer</a>
+            <?php else: ?>
+              <a href="<?= url('/admin/finance/paiements/voir?id='.(int)$r['inscription_id']) ?>">Voir / Ajouter</a>
+            <?php endif; ?>
+          </td>
         </tr>
       <?php endforeach; ?>
     <?php endif; ?>
   </tbody>
 </table>
+
+<p class="muted" style="margin-top:10px;">
+  Si une inscription est en <strong>SANS_SNAPSHOT</strong>, paramétrez d'abord le tarif de la cohorte puis utilisez
+  <em>"Générer snapshots manquants"</em> sur la page Tarifs.
+</p>

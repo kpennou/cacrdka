@@ -14,7 +14,7 @@
       <th>Fin</th>
       <th>Montant total</th>
       <th>Date limite paiement</th>
-      <th>Action</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -29,14 +29,36 @@
         <td><?= htmlspecialchars((string)($c['date_limite_paiement'] ?? '')) ?></td>
 
         <td>
+          <!-- Enregistrer tarif -->
           <form method="post" action="<?= url('/admin/finance/cohortes/save') ?>" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
             <input type="hidden" name="cohorte_id" value="<?= (int)$c['id'] ?>">
 
-            <input name="montant_total" placeholder="Montant" value="<?= htmlspecialchars((string)($c['montant_total'] ?? '')) ?>" style="padding:6px;width:120px;">
-            <input type="date" name="date_limite_paiement" value="<?= htmlspecialchars((string)($c['date_limite_paiement'] ?? '')) ?>" style="padding:6px;">
-            <button>Enregistrer</button>
+            <input name="montant_total"
+                   placeholder="Montant"
+                   value="<?= htmlspecialchars((string)($c['montant_total'] ?? '')) ?>"
+                   style="padding:6px;width:120px;">
+
+            <input type="date"
+                   name="date_limite_paiement"
+                   value="<?= htmlspecialchars((string)($c['date_limite_paiement'] ?? '')) ?>"
+                   style="padding:6px;">
+
+            <button type="submit">Enregistrer</button>
           </form>
+
+          <!-- Rebuild snapshots manquants -->
+          <form method="post" action="<?= url('/admin/finance/snapshot/rebuild') ?>" style="margin-top:6px;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
+            <input type="hidden" name="cohorte_id" value="<?= (int)$c['id'] ?>">
+            <button type="submit" onclick="return confirm('Générer les snapshots manquants pour cette cohorte ?');">
+              Générer snapshots manquants
+            </button>
+          </form>
+
+          <div class="muted" style="margin-top:6px;">
+            Utilise ce bouton si des inscriptions existent déjà avant paramétrage.
+          </div>
         </td>
       </tr>
     <?php endforeach; ?>

@@ -154,5 +154,8 @@ $router->get('/admin/finance/paiements', fn() => $adminPaiements->index());
 $router->get('/admin/finance/paiements/voir', fn() => $adminPaiements->voir());
 $router->post('/admin/finance/paiements/ajouter', fn() => $adminPaiements->ajouter());
 
+//V1 Finance UI sans snapsht
+$router->post('/admin/finance/snapshot/rebuild', fn() => $adminFinanceCohortes->rebuildSnapshots());
+
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

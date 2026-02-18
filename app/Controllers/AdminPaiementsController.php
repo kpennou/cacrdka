@@ -13,42 +13,67 @@ class AdminPaiementsController extends Controller
     $pdo = DB::pdo();
 
     $cohorte_id = (int)($_GET['cohorte_id'] ?? 0);
-    $q = trim((string)($_GET['q'] ?? '')); // recherche nom/tel/matricule éventuel
+    $q = trim((string)($_GET['q'] ?? ''));
 
     // Cohortes pour filtre
     $cohortes = $pdo->query("SELECT id, libelle FROM cohortes ORDER BY id DESC LIMIT 200")->fetchAll();
 
-    // Liste inscriptions finance (avec reste)
+    // Liste inscriptions + finance (snapshot optionnel)
     $sql = "
       SELECT
-        vf.inscription_id,
-        vf.cohorte_id,
-        vf.cohorte,
-        vf.montant_total,
-        vf.bourse_montant,
-        vf.montant_net,
-        vf.total_paye,
-        vf.reste_a_payer,
-        vf.date_limite_paiement,
-        vf.en_retard,
-        vf.statut,
+        i.id AS inscription_id,
+        i.cohorte_id,
+        c.libelle AS cohorte,
+
+        a.id AS apprenant_id,
         a.nom,
         a.prenoms,
-        a.telephone
-      FROM vw_inscriptions_finance vf
-      JOIN apprenants a ON a.id = vf.apprenant_id
+        a.telephone,
+
+        f.montant_total,
+        f.bourse_montant,
+        f.montant_net,
+
+        COALESCE((SELECT SUM(p.montant) FROM paiements p WHERE p.inscription_id=i.id),0) AS total_paye,
+
+        CASE
+          WHEN f.inscription_id IS NULL THEN NULL
+          ELSE (f.montant_net - COALESCE((SELECT SUM(p.montant) FROM paiements p WHERE p.inscription_id=i.id),0))
+        END AS reste_a_payer,
+
+        f.date_limite_paiement,
+
+        CASE
+          WHEN f.inscription_id IS NULL THEN 0
+          WHEN f.date_limite_paiement IS NOT NULL AND CURDATE() > f.date_limite_paiement
+               AND (f.montant_net - COALESCE((SELECT SUM(p.montant) FROM paiements p WHERE p.inscription_id=i.id),0)) > 0
+          THEN 1 ELSE 0 END AS en_retard,
+
+        COALESCE(f.statut,'SANS_SNAPSHOT') AS statut_finance
+
+      FROM inscriptions i
+      JOIN cohortes c ON c.id=i.cohorte_id
+      JOIN apprenants a ON a.id=i.apprenant_id
+      LEFT JOIN inscription_finance f ON f.inscription_id=i.id
     ";
+
     $where = [];
     $params = [];
 
-    if ($cohorte_id > 0) { $where[] = "vf.cohorte_id=?"; $params[] = $cohorte_id; }
+    if ($cohorte_id > 0) { $where[] = "i.cohorte_id=?"; $params[] = $cohorte_id; }
+
     if ($q !== '') {
       $where[] = "(a.nom LIKE ? OR a.prenoms LIKE ? OR a.telephone LIKE ?)";
       $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%";
     }
+
     if ($where) $sql .= " WHERE " . implode(" AND ", $where);
 
-    $sql .= " ORDER BY vf.en_retard DESC, vf.reste_a_payer DESC, vf.inscription_id DESC LIMIT 300";
+    // Trier: retards en haut, puis reste décroissant (NULL à la fin), puis id desc
+    $sql .= " ORDER BY en_retard DESC,
+                     (CASE WHEN reste_a_payer IS NULL THEN -1 ELSE reste_a_payer END) DESC,
+                     inscription_id DESC
+              LIMIT 300";
 
     $st = $pdo->prepare($sql);
     $st->execute($params);
@@ -69,7 +94,7 @@ class AdminPaiementsController extends Controller
     $inscription_id = (int)($_GET['id'] ?? 0);
     if ($inscription_id <= 0) redirect('/admin/finance/paiements');
 
-    // Détail finance
+    // Détail finance (nécessite snapshot -> vue)
     $st = $pdo->prepare("
       SELECT
         vf.*,
@@ -82,7 +107,7 @@ class AdminPaiementsController extends Controller
     $st->execute([$inscription_id]);
     $fiche = $st->fetch();
     if (!$fiche) {
-      Session::flash('error', 'Inscription finance introuvable (snapshot manquant ?).');
+      Session::flash('error', 'Inscription finance introuvable (snapshot manquant ?). Paramétrez le tarif cohorte puis générez les snapshots manquants.');
       redirect('/admin/finance/paiements');
     }
 
@@ -130,7 +155,7 @@ class AdminPaiementsController extends Controller
     $f->execute([$inscription_id]);
     $fin = $f->fetch();
     if (!$fin) {
-      Session::flash('error', 'Impossible: snapshot finance absent (inscription_finance).');
+      Session::flash('error', 'Impossible: snapshot finance absent (inscription_finance). Paramétrez le tarif cohorte puis générez les snapshots.');
       redirect('/admin/finance/paiements');
     }
 

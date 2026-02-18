@@ -79,4 +79,49 @@ class AdminFinanceCohortesController extends Controller
     Session::flash('success', 'Tarif cohorte enregistré.');
     redirect('/admin/finance/cohortes');
   }
+
+    // ajout méthode rebuildSnapshots
+    public function rebuildSnapshots(): void {
+    Auth::requireRole(['DIRECTEUR','ADMIN']);
+    $this->csrfOrFail('/admin/finance/cohortes');
+
+    $cohorte_id = (int)($_POST['cohorte_id'] ?? 0);
+    if ($cohorte_id <= 0) {
+      Session::flash('error', 'Cohorte invalide.');
+      redirect('/admin/finance/cohortes');
+    }
+
+    $pdo = DB::pdo();
+
+    // Vérifier qu'il existe un tarif
+    $t = $pdo->prepare("SELECT montant_total, date_limite_paiement FROM cohorte_tarifs WHERE cohorte_id=?");
+    $t->execute([$cohorte_id]);
+    $tarif = $t->fetch();
+    if (!$tarif) {
+      Session::flash('error', 'Impossible: aucun tarif défini pour cette cohorte.');
+      redirect('/admin/finance/cohortes');
+    }
+
+    // Générer les snapshots manquants pour toutes les inscriptions de la cohorte
+    $st = $pdo->prepare("
+      INSERT INTO inscription_finance (inscription_id, montant_total, bourse_montant, montant_net, date_limite_paiement)
+      SELECT
+        i.id,
+        ct.montant_total,
+        0.00,
+        ct.montant_total,
+        ct.date_limite_paiement
+      FROM inscriptions i
+      JOIN cohorte_tarifs ct ON ct.cohorte_id=i.cohorte_id
+      LEFT JOIN inscription_finance f ON f.inscription_id=i.id
+      WHERE i.cohorte_id=?
+        AND f.inscription_id IS NULL
+    ");
+    $st->execute([$cohorte_id]);
+    $nb = $st->rowCount();
+
+    Session::flash('success', "Snapshots générés: $nb");
+    redirect('/admin/finance/cohortes');
+  }
+
 }
