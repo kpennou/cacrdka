@@ -46,6 +46,10 @@
     
     <a href="<?= url('/admin/evaluations') ?>">Évaluations</a>
 
+    <a href="<?= url('/admin/finance/cohortes') ?>">Finance: Tarifs</a>
+    <a href="<?= url('/admin/finance/paiements') ?>">Finance: Paiements</a>
+
+
 
     <a href="<?= url('/logout') ?>">Déconnexion</a>
 

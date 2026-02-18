@@ -61,7 +61,6 @@ class AdminVivierController extends Controller {
     $qp->execute([$id]);
     $pieces = $qp->fetchAll();
 
-
     $this->view('admin/vivier_voir', [
       'dossier'=>$dossier,
       'completude'=>$completude,
@@ -69,7 +68,6 @@ class AdminVivierController extends Controller {
       'error'=>Session::flash('error'),
       'success'=>Session::flash('success'),
     ]);
-
   }
 
   public function selectionner(): void {
@@ -120,25 +118,59 @@ class AdminVivierController extends Controller {
     $pdo->beginTransaction();
     try {
       $matricule = 'APP-' . str_pad((string)$id, 6, '0', STR_PAD_LEFT);
+      $financeWarning = null;
 
       $insA = $pdo->prepare("
         INSERT INTO apprenants (matricule, nom, prenoms, telephone, date_naissance, sexe, niveau_etude)
         VALUES (?,?,?,?,?,?,?)
       ");
-      $insA->execute([$matricule,$p['nom'],$p['prenoms'],$p['telephone'],$p['date_naissance'],$p['sexe'],$p['niveau_etude']]);
+      $insA->execute([
+        $matricule,
+        $p['nom'],
+        $p['prenoms'],
+        $p['telephone'],
+        $p['date_naissance'],
+        $p['sexe'],
+        $p['niveau_etude']
+      ]);
       $apprenant_id = (int)$pdo->lastInsertId();
 
+      // 1) Inscription cohorte
       $pdo->prepare("INSERT INTO inscriptions (apprenant_id, cohorte_id, date_inscription) VALUES (?,?,CURDATE())")
           ->execute([$apprenant_id,$cohorte_id]);
 
+      $inscription_id = (int)$pdo->lastInsertId();
+
+      // 2) FINANCE V1 (mode permissif, sans tranches)
+      // On essaie de créer le snapshot inscription_finance depuis cohorte_tarifs.
+      // Si cohorte_tarifs n'existe pas, on ne bloque pas la conversion, mais on avertit.
+      $bourse = 0.0; // V1 : réduction par défaut / On ajoutera un écran pour modifier la bourse ensuite.
+
+      $stFin = $pdo->prepare("
+        INSERT INTO inscription_finance (inscription_id, montant_total, bourse_montant, montant_net, date_limite_paiement)
+        SELECT ?, ct.montant_total, ?, (ct.montant_total - ?), ct.date_limite_paiement
+        FROM cohorte_tarifs ct
+        WHERE ct.cohorte_id=?
+          AND NOT EXISTS (SELECT 1 FROM inscription_finance f WHERE f.inscription_id=?)
+      ");
+
+      $stFin->execute([$inscription_id, $bourse, $bourse, $cohorte_id, $inscription_id]);
+
+      if ($stFin->rowCount() === 0) {
+        $financeWarning = "Attention : tarif de la cohorte non paramétré. Finance inactive pour l’inscription #$inscription_id.";
+      }
+
+      // 3) Conversion log
       $pdo->prepare("INSERT INTO conversions (type, source_preinscription_id, cible_apprenant_id, converted_by) VALUES ('APPRENANT',?,?,?)")
           ->execute([$id,$apprenant_id,(int)(Auth::user()['id'] ?? 0)]);
 
+      // 4) Mise à jour dossier vivier
       $pdo->prepare("UPDATE preinscriptions_apprenants SET statut='CONVERTI', converted_at=NOW() WHERE id=?")
           ->execute([$id]);
 
       $pdo->commit();
-      Session::flash('success', "Converti en apprenant ($matricule).");
+
+      Session::flash('success', "Converti en apprenant ($matricule)." . ($financeWarning ? " $financeWarning" : ""));
     } catch (Throwable $e) {
       $pdo->rollBack();
       Session::flash('error', 'Erreur conversion: '.$e->getMessage());

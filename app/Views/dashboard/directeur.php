@@ -150,6 +150,33 @@
 
 
 
+<h2 style="margin-top:22px;">Finance — Vue 360°</h2>
+
+<div class="cards">
+  <div class="card"><strong>Total à encaisser</strong><br><?= htmlspecialchars((string)$kpiFinance['total_a_encaisser']) ?></div>
+  <div class="card"><strong>Total encaissé</strong><br><?= htmlspecialchars((string)$kpiFinance['total_encaisse']) ?></div>
+  <div class="card"><strong>Total restant</strong><br><?= htmlspecialchars((string)$kpiFinance['total_restant']) ?></div>
+</div>
+
+<h3 style="margin-top:18px;">Alertes – Impayés (top 10 retards)</h3>
+<table>
+  <thead><tr><th>Cohorte</th><th>Inscription</th><th>Reste</th><th>Date limite</th></tr></thead>
+  <tbody>
+    <?php if (empty($impayes)): ?>
+      <tr><td colspan="4" class="muted">Aucune alerte.</td></tr>
+    <?php else: ?>
+      <?php foreach ($impayes as $r): ?>
+        <tr>
+          <td><?= htmlspecialchars($r['cohorte']) ?></td>
+          <td>#<?= (int)$r['inscription_id'] ?></td>
+          <td><strong><?= htmlspecialchars((string)$r['reste_a_payer']) ?></strong></td>
+          <td><?= htmlspecialchars((string)($r['date_limite_paiement'] ?? '')) ?></td>
+        </tr>
+      <?php endforeach; ?>
+    <?php endif; ?>
+  </tbody>
+</table>
+
 
 <p class="muted" style="margin-top:10px;">
   Pour agir : menu <strong>Vivier (Admin) / Vivier formateurs</strong>.

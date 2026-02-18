@@ -30,6 +30,8 @@ require __DIR__ . '/../app/Controllers/AdminAffectationsController.php';
 
 require __DIR__ . '/../app/Controllers/AdminEvaluationsController.php';
 
+require __DIR__ . '/../app/Controllers/AdminFinanceCohortesController.php';
+require __DIR__ . '/../app/Controllers/AdminPaiementsController.php';
 
 
 
@@ -67,6 +69,12 @@ $adminMatieres = new AdminMatieresController();
 $adminAffect = new AdminAffectationsController();
 
 $adminEval = new AdminEvaluationsController();
+
+//Finance
+$adminFinanceCohortes = new AdminFinanceCohortesController();
+$adminPaiements = new AdminPaiementsController();
+
+
 
 $router->get('/', fn() => redirect('/login'));
 
@@ -136,6 +144,15 @@ $router->post('/admin/evaluations/create', fn() => $adminEval->create());
 $router->get('/admin/evaluations/notes', fn() => $adminEval->notesForm());
 $router->post('/admin/evaluations/notes/save', fn() => $adminEval->notesSave());
 $router->post('/admin/evaluations/toggle', fn() => $adminEval->toggleStatut());
+
+// Finance - Tarifs cohorte
+$router->get('/admin/finance/cohortes', fn() => $adminFinanceCohortes->index());
+$router->post('/admin/finance/cohortes/save', fn() => $adminFinanceCohortes->save());
+
+// Finance - Paiements
+$router->get('/admin/finance/paiements', fn() => $adminPaiements->index());
+$router->get('/admin/finance/paiements/voir', fn() => $adminPaiements->voir());
+$router->post('/admin/finance/paiements/ajouter', fn() => $adminPaiements->ajouter());
 
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);
