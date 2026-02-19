@@ -35,6 +35,8 @@ require __DIR__ . '/../app/Controllers/AdminPaiementsController.php';
 
 require __DIR__ . '/../app/Controllers/AdminFinanceExportController.php';
 
+require __DIR__ . '/../app/Controllers/AdminCohortesController.php';
+
 
 
 Session::start();
@@ -76,6 +78,9 @@ $adminEval = new AdminEvaluationsController();
 $adminFinanceCohortes = new AdminFinanceCohortesController();
 $adminPaiements = new AdminPaiementsController();
 $adminFinanceExport = new AdminFinanceExportController();
+
+//Cohorte module admin CRUD
+$adminCohortes = new AdminCohortesController();
 
 $router->get('/', fn() => redirect('/login'));
 
@@ -165,6 +170,14 @@ $router->get('/admin/finance/export/cohortes', fn() => $adminFinanceExport->expo
 
 $router->get('/admin/finance/journal', fn() => $adminFinanceExport->journalCaisse());
 $router->get('/admin/finance/export/journal', fn() => $adminFinanceExport->exportJournalCsv());
+
+//Cohorte module admin CRUD
+$router->get('/admin/cohortes', fn() => $adminCohortes->index());
+$router->get('/admin/cohortes/create', fn() => $adminCohortes->create());
+$router->post('/admin/cohortes/store', fn() => $adminCohortes->store());
+
+$router->get('/admin/cohortes/edit', fn() => $adminCohortes->edit());
+$router->post('/admin/cohortes/update', fn() => $adminCohortes->update());
 
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

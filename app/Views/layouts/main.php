@@ -40,6 +40,8 @@
     <a href="<?= url('/admin/vivier-formateurs') ?>">Vivier formateurs</a>
     
     <a href="<?= url('/admin/formateurs') ?>">Équipe formateurs</a>
+
+    <a href="<?= url('/admin/cohortes') ?>">Cohortes</a>
     
     <a href="<?= url('/admin/matieres') ?>">Matières</a>
     <a href="<?= url('/admin/affectations') ?>">Affectations</a>
