@@ -33,6 +33,8 @@ require __DIR__ . '/../app/Controllers/AdminEvaluationsController.php';
 require __DIR__ . '/../app/Controllers/AdminFinanceCohortesController.php';
 require __DIR__ . '/../app/Controllers/AdminPaiementsController.php';
 
+require __DIR__ . '/../app/Controllers/AdminFinanceExportController.php';
+
 
 
 Session::start();
@@ -73,8 +75,7 @@ $adminEval = new AdminEvaluationsController();
 //Finance
 $adminFinanceCohortes = new AdminFinanceCohortesController();
 $adminPaiements = new AdminPaiementsController();
-
-
+$adminFinanceExport = new AdminFinanceExportController();
 
 $router->get('/', fn() => redirect('/login'));
 
@@ -156,6 +157,14 @@ $router->post('/admin/finance/paiements/ajouter', fn() => $adminPaiements->ajout
 
 //V1 Finance UI sans snapsht
 $router->post('/admin/finance/snapshot/rebuild', fn() => $adminFinanceCohortes->rebuildSnapshots());
+
+//Route bourse
+$router->post('/admin/finance/bourse/save', fn() => $adminPaiements->saveBourse());
+
+$router->get('/admin/finance/export/cohortes', fn() => $adminFinanceExport->exportCohortesCsv());
+
+$router->get('/admin/finance/journal', fn() => $adminFinanceExport->journalCaisse());
+$router->get('/admin/finance/export/journal', fn() => $adminFinanceExport->exportJournalCsv());
 
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

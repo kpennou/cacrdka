@@ -18,6 +18,29 @@
   Statut: <span class="badge"><?= htmlspecialchars($fiche['statut']) ?></span>
 </div>
 
+<h3 style="margin-top:14px;">Bourse (réduction)</h3>
+
+<form method="post" action="<?= url('/admin/finance/bourse/save') ?>" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap">
+  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
+  <input type="hidden" name="inscription_id" value="<?= (int)$fiche['inscription_id'] ?>">
+
+  <div>
+    <label>Montant bourse</label><br>
+    <input name="bourse_montant"
+           value="<?= htmlspecialchars((string)($fiche['bourse_montant'] ?? '0')) ?>"
+           style="padding:8px;width:140px;">
+  </div>
+
+  <button style="padding:10px 16px;">Enregistrer bourse</button>
+</form>
+
+<p class="muted" style="margin-top:6px;">
+  La bourse réduit le montant net à payer (V1).
+</p>
+
+
+
+
 <h3 style="margin-top:14px;">Ajouter un paiement</h3>
 
 <form method="post" action="<?= url('/admin/finance/paiements/ajouter') ?>" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap">

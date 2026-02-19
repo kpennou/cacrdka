@@ -47,6 +47,12 @@ class DashboardController extends Controller {
     $impayes = $pdo->query("SELECT * FROM vw_kpi_impayes_top10")->fetchAll();
     //Fin finance
 
+    $kpiBourses = $pdo->query("SELECT * FROM vw_kpi_bourses_global")->fetch() ?: ['total_bourses'=>0,'nb_inscriptions_avec_snapshot'=>0];
+
+    $financeCohortes = $pdo->query("SELECT * FROM vw_kpi_finance_par_cohorte ORDER BY cohorte_id DESC LIMIT 50")->fetchAll();
+
+
+
 
     $this->view('dashboard/directeur', [
       'viviers'=>$viviers,
@@ -59,6 +65,8 @@ class DashboardController extends Controller {
       'notesManquantes' => $notesManquantes,
       'kpiFinance' => $kpiFinance,
       'impayes' => $impayes,
+      'kpiBourses' => $kpiBourses,
+      'financeCohortes' => $financeCohortes,
 
     ]);
   }

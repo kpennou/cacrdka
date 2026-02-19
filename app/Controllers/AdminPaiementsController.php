@@ -188,4 +188,62 @@ class AdminPaiementsController extends Controller
     Session::flash('success', 'Paiement ajouté.');
     redirect('/admin/finance/paiements/voir?id='.$inscription_id);
   }
+
+    // ajouter saveBourse()
+    public function saveBourse(): void {
+    Auth::requireRole(['DIRECTEUR','ADMIN']);
+    $this->csrfOrFail('/admin/finance/paiements');
+
+    $pdo = DB::pdo();
+
+    $inscription_id = (int)($_POST['inscription_id'] ?? 0);
+    $bourse_raw = trim((string)($_POST['bourse_montant'] ?? ''));
+
+    if ($inscription_id <= 0 || $bourse_raw === '') {
+      Session::flash('error', 'Inscription et bourse requis.');
+      redirect('/admin/finance/paiements/voir?id='.$inscription_id);
+    }
+
+    $bourse = (float)str_replace(',', '.', $bourse_raw);
+    if ($bourse < 0) $bourse = 0;
+
+    // Charger finance snapshot
+    $st = $pdo->prepare("SELECT montant_total FROM inscription_finance WHERE inscription_id=? AND statut!='ANNULE' LIMIT 1");
+    $st->execute([$inscription_id]);
+    $fin = $st->fetch();
+
+    if (!$fin) {
+      Session::flash('error', 'Snapshot finance introuvable (inscription_finance).');
+      redirect('/admin/finance/paiements');
+    }
+
+    $montantTotal = (float)$fin['montant_total'];
+    if ($bourse > $montantTotal) $bourse = $montantTotal;
+
+    $montantNet = $montantTotal - $bourse;
+
+    // Appliquer bourse + net
+    $upd = $pdo->prepare("
+      UPDATE inscription_finance
+      SET bourse_montant=?, montant_net=?
+      WHERE inscription_id=?
+      LIMIT 1
+    ");
+    $upd->execute([$bourse, $montantNet, $inscription_id]);
+
+    // Recalcul statut selon paiements déjà faits
+    $sum = $pdo->prepare("SELECT COALESCE(SUM(montant),0) AS total FROM paiements WHERE inscription_id=?");
+    $sum->execute([$inscription_id]);
+    $totalPaye = (float)$sum->fetch()['total'];
+
+    if ($totalPaye >= $montantNet) {
+      $pdo->prepare("UPDATE inscription_finance SET statut='SOLDE' WHERE inscription_id=?")->execute([$inscription_id]);
+    } else {
+      $pdo->prepare("UPDATE inscription_finance SET statut='EN_COURS' WHERE inscription_id=?")->execute([$inscription_id]);
+    }
+
+    Session::flash('success', 'Bourse enregistrée et montant net recalculé.');
+    redirect('/admin/finance/paiements/voir?id='.$inscription_id);
+  }
+
 }

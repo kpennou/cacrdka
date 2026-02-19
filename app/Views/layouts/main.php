@@ -49,7 +49,7 @@
     <a href="<?= url('/admin/finance/cohortes') ?>">Finance: Tarifs</a>
     <a href="<?= url('/admin/finance/paiements') ?>">Finance: Paiements</a>
 
-
+    <a href="<?= url('/admin/finance/journal') ?>">Finance: Journal de caisse</a>
 
     <a href="<?= url('/logout') ?>">Déconnexion</a>
 

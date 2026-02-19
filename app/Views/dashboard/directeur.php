@@ -156,6 +156,8 @@
   <div class="card"><strong>Total à encaisser</strong><br><?= htmlspecialchars((string)$kpiFinance['total_a_encaisser']) ?></div>
   <div class="card"><strong>Total encaissé</strong><br><?= htmlspecialchars((string)$kpiFinance['total_encaisse']) ?></div>
   <div class="card"><strong>Total restant</strong><br><?= htmlspecialchars((string)$kpiFinance['total_restant']) ?></div>
+  <div class="card"><strong>Total bourses</strong><br><?= htmlspecialchars((string)$kpiBourses['total_bourses']) ?></div>
+
 </div>
 
 <h3 style="margin-top:18px;">Alertes – Impayés (top 10 retards)</h3>
@@ -170,6 +172,54 @@
           <td><?= htmlspecialchars($r['cohorte']) ?></td>
           <td>#<?= (int)$r['inscription_id'] ?></td>
           <td><strong><?= htmlspecialchars((string)$r['reste_a_payer']) ?></strong></td>
+          <td><?= htmlspecialchars((string)($r['date_limite_paiement'] ?? '')) ?></td>
+        </tr>
+      <?php endforeach; ?>
+    <?php endif; ?>
+  </tbody>
+</table>
+
+<p style="margin-top:12px;">
+  <a href="<?= url('/admin/finance/export/cohortes') ?>" class="btn">Exporter CSV (Finance par cohorte)</a>
+</p>
+
+<h3 style="margin-top:18px;">Finance — KPI par cohorte</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Cohorte</th>
+      <th>Statut</th>
+      <th>Inscrits</th>
+      <th>Snapshots</th>
+      <th>À encaisser (net)</th>
+      <th>Encaissé</th>
+      <th>Reste</th>
+      <th>Bourses</th>
+      <th>Retards</th>
+      <th>Date limite</th>
+    </tr>
+  </thead>
+  <tbody>
+    <?php if (empty($financeCohortes)): ?>
+      <tr><td colspan="10" class="muted">Aucune donnée.</td></tr>
+    <?php else: ?>
+      <?php foreach ($financeCohortes as $r): ?>
+        <tr>
+          <!-- <td><?= htmlspecialchars($r['cohorte']) ?></td> -->
+          <td>
+            <a href="<?= url('/admin/finance/paiements?cohorte_id='.(int)$r['cohorte_id']) ?>">
+              <?= htmlspecialchars($r['cohorte']) ?>
+            </a>
+          </td> 
+          <td><span class="badge"><?= htmlspecialchars($r['statut']) ?></span></td>
+          <td><?= (int)$r['nb_inscrits'] ?></td>
+          <td><?= (int)$r['nb_snapshots'] ?></td>
+          <td><?= htmlspecialchars((string)$r['total_a_encaisser']) ?></td>
+          <td><?= htmlspecialchars((string)$r['total_encaisse']) ?></td>
+          <td><strong><?= htmlspecialchars((string)$r['total_restant']) ?></strong></td>
+          <td><?= htmlspecialchars((string)$r['total_bourses']) ?></td>
+          <td><?= (int)$r['nb_retards'] ?></td>
           <td><?= htmlspecialchars((string)($r['date_limite_paiement'] ?? '')) ?></td>
         </tr>
       <?php endforeach; ?>
